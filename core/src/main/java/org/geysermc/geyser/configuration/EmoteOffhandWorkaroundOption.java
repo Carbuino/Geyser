@@ -34,6 +34,7 @@ import java.io.IOException;
 public enum EmoteOffhandWorkaroundOption {
     NO_EMOTES,
     EMOTES_AND_OFFHAND,
+    COMMANDS,
     DISABLED;
 
     public static class Deserializer extends JsonDeserializer<EmoteOffhandWorkaroundOption> {
@@ -43,6 +44,7 @@ public enum EmoteOffhandWorkaroundOption {
             return switch (value) {
                 case "no-emotes" -> NO_EMOTES;
                 case "emotes-and-offhand" -> EMOTES_AND_OFFHAND;
+                case "commands" -> COMMANDS;
                 default -> DISABLED;
             };
         }

@@ -26,6 +26,7 @@
 package org.geysermc.geyser.translator.protocol.bedrock.entity.player;
 
 import org.cloudburstmc.protocol.bedrock.packet.EmotePacket;
+import org.geysermc.cumulus.form.CustomForm;
 import org.geysermc.geyser.api.event.bedrock.ClientEmoteEvent;
 import org.geysermc.geyser.configuration.EmoteOffhandWorkaroundOption;
 import org.geysermc.geyser.entity.type.Entity;
@@ -39,6 +40,29 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
 
     @Override
     public void translate(GeyserSession session, EmotePacket packet) {
+        if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() == EmoteOffhandWorkaroundOption.COMMANDS) {
+            
+            CustomForm.Builder emoteMenu = CustomForm.builder()
+                .title("Emote Menu")
+                .dropdown("Option", "Swap Offhand", "Execute Command")
+                .input("Command", "Enter a command");
+
+            emoteMenu.closedResultHandler(() -> {
+                return;
+            }).validResultHandler((response) -> {
+                if (response.asDropdown(0) == 0) {
+                    session.requestOffhandSwap();
+                    return;
+                } else {
+                    session.sendCommand(response.asInput(0));
+                    return;
+                }
+            });
+            
+            session.sendForm(emoteMenu);
+
+            return;
+        }
         if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() != EmoteOffhandWorkaroundOption.DISABLED) {
             // Activate the workaround - we should trigger the offhand now
             session.requestOffhandSwap();
