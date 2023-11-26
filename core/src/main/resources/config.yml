@@ -132,10 +132,11 @@ show-coordinates: true
 disable-bedrock-scaffolding: false
 
 # If set, when a Bedrock player performs any emote, it will swap the offhand and mainhand items, just like the Java Edition keybind
-# There are three options this can be set to:
+# There are four options this can be set to:
 # disabled - the default/fallback, which doesn't apply this workaround
 # no-emotes - emotes will NOT be sent to other Bedrock clients and offhand will be swapped. This effectively disables all emotes from being seen.
 # emotes-and-offhand - emotes will be sent to Bedrock clients and offhand will be swapped
+# menu - beings up a menu where you can choose to swap offhand, execute a command and bypass the chat or pass through the emote. This is useful for when xbox achievements are enabled in the config.
 emote-offhand-workaround: "disabled"
 
 # The default locale if we dont have the one the client requested. Uncomment to not use the default system language.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2023 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,22 +40,25 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
 
     @Override
     public void translate(GeyserSession session, EmotePacket packet) {
-        if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() == EmoteOffhandWorkaroundOption.COMMANDS) {
+        if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() == EmoteOffhandWorkaroundOption.MENU) {
             
             CustomForm.Builder emoteMenu = CustomForm.builder()
                 .title("Emote Menu")
-                .dropdown("Option", "Swap Offhand", "Execute Command")
+                .dropdown("Option", "Swap Offhand", "Execute Command", "Send Emote")
                 .input("Command", "Enter a command");
 
             emoteMenu.closedResultHandler(() -> {
                 return;
             }).validResultHandler((response) -> {
+                // Swap Offhand
                 if (response.asDropdown(0) == 0) {
                     session.requestOffhandSwap();
-                    return;
-                } else {
+                // Execute Command
+                } else if (response.asDropdown(0) == 1) {
                     session.sendCommand(response.asInput(1));
-                    return;
+                // Send Emote
+                } else {
+                    processEmote(session, packet);
                 }
             });
             
@@ -63,6 +66,7 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
 
             return;
         }
+
         if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() != EmoteOffhandWorkaroundOption.DISABLED) {
             // Activate the workaround - we should trigger the offhand now
             session.requestOffhandSwap();
@@ -72,6 +76,16 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
             }
         }
 
+        processEmote(session, packet);
+    }
+
+    /**
+     * Process an EmotePacket to be played
+     *
+     * @param session the session of the emoter
+     * @param packet the packet with the emote data
+     */
+    private void processEmote(GeyserSession session, EmotePacket packet) {
         // For the future: could have a method that exposes which players will see the emote
         ClientEmoteEvent event = new ClientEmoteEvent(session, packet.getEmoteId());
         session.getGeyser().eventBus().fire(event);
