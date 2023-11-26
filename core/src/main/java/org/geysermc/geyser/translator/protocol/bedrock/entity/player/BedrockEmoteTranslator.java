@@ -54,7 +54,7 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
                     session.requestOffhandSwap();
                     return;
                 } else {
-                    session.sendCommand(response.asInput(0));
+                    session.sendCommand(response.asInput(1));
                     return;
                 }
             });
