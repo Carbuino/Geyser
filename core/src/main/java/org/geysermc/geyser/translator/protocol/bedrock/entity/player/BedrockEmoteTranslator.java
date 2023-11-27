@@ -34,8 +34,13 @@ import org.geysermc.geyser.configuration.EmoteOffhandWorkaroundOption;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
 import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.geyser.text.MinecraftLocale;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
+import org.geysermc.geyser.util.SettingsUtils;
+
+import com.github.steveice10.mc.protocol.data.game.ClientCommand;
+import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientCommandPacket;
 
 @Translator(packet = EmotePacket.class)
 public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
@@ -63,15 +68,20 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
                         break;
 
                     case 2:
-                        session.sendCommand("geyser tooltips");
+                        String onOrOff = session.isAdvancedTooltips() ? "off" : "on";
+                        session.setAdvancedTooltips(!session.isAdvancedTooltips());
+                        session.sendMessage("§l§e" + MinecraftLocale.getLocaleString("debug.prefix", session.locale()) + " §r" + MinecraftLocale.getLocaleString("debug.advanced_tooltips." + onOrOff, session.locale()));
+                        session.getInventoryTranslator().updateInventory(session, session.getPlayerInventory());
                         break;
 
                     case 3:
-                        session.sendCommand("geyser advancements");
+                        session.getAdvancementsCache().buildAndShowMenuForm();
                         break;
 
                     case 4:
-                        session.sendCommand("geyser statistics");
+                        session.setWaitingForStatistics(true);
+                        ServerboundClientCommandPacket ServerboundClientCommandPacket = new ServerboundClientCommandPacket(ClientCommand.STATS);
+                        session.sendDownstreamGamePacket(ServerboundClientCommandPacket);
                         break;
 
                     case 5:
@@ -79,7 +89,7 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
                         break;
 
                     case 6:
-                        session.sendCommand("geyser settings");
+                        session.sendForm(SettingsUtils.buildForm(session));
                         break;
                 
                     default:
