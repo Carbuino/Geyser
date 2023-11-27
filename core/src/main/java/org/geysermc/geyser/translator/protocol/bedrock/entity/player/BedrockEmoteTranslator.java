@@ -26,21 +26,14 @@
 package org.geysermc.geyser.translator.protocol.bedrock.entity.player;
 
 import org.cloudburstmc.protocol.bedrock.packet.EmotePacket;
-import org.geysermc.cumulus.form.CustomForm;
-import org.geysermc.cumulus.form.SimpleForm;
-import org.geysermc.cumulus.util.FormImage;
 import org.geysermc.geyser.api.event.bedrock.ClientEmoteEvent;
 import org.geysermc.geyser.configuration.EmoteOffhandWorkaroundOption;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
 import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.text.MinecraftLocale;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
-import org.geysermc.geyser.util.SettingsUtils;
-
-import com.github.steveice10.mc.protocol.data.game.ClientCommand;
-import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientCommandPacket;
+import org.geysermc.geyser.util.EmoteMenuUtils;
 
 @Translator(packet = EmotePacket.class)
 public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
@@ -48,59 +41,8 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
     @Override
     public void translate(GeyserSession session, EmotePacket packet) {
         if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() == EmoteOffhandWorkaroundOption.MENU) {
-            
-            SimpleForm.Builder emoteMenu = SimpleForm.builder()
-                .title("Emote Menu")
-                .button("Send Emote", FormImage.Type.PATH, "textures/ui/sprint.png")
-                .button("Swap Offhand", FormImage.Type.PATH, "textures/ui/refresh.png")
-                .button("Toggle Advanced Tooltips", FormImage.Type.PATH, "textures/ui/icon_recipe_equipment.png")
-                .button("Advancements", FormImage.Type.PATH, "textures/ui/village_hero_effect.png")
-                .button("Statistics", FormImage.Type.PATH, "textures/ui/icon_iron_pickaxe.png")
-                .button("Execute Command", FormImage.Type.PATH, "textures/ui/ImpulseSquare.png")
-                .button("Geyser Settings", FormImage.Type.PATH, "textures/ui/settings_glyph_color_2x.png");
-
-            emoteMenu.closedResultHandler(() -> {
-                return;
-            }).validResultHandler((response) -> {
-                switch (response.clickedButtonId()) {
-                    case 1:
-                        session.requestOffhandSwap();
-                        break;
-
-                    case 2:
-                        String onOrOff = session.isAdvancedTooltips() ? "off" : "on";
-                        session.setAdvancedTooltips(!session.isAdvancedTooltips());
-                        session.sendMessage("§l§e" + MinecraftLocale.getLocaleString("debug.prefix", session.locale()) + " §r" + MinecraftLocale.getLocaleString("debug.advanced_tooltips." + onOrOff, session.locale()));
-                        session.getInventoryTranslator().updateInventory(session, session.getPlayerInventory());
-                        break;
-
-                    case 3:
-                        session.getAdvancementsCache().buildAndShowMenuForm();
-                        break;
-
-                    case 4:
-                        session.setWaitingForStatistics(true);
-                        ServerboundClientCommandPacket ServerboundClientCommandPacket = new ServerboundClientCommandPacket(ClientCommand.STATS);
-                        session.sendDownstreamGamePacket(ServerboundClientCommandPacket);
-                        break;
-
-                    case 5:
-                        session.sendCommand("give @p diamond");
-                        break;
-
-                    case 6:
-                        session.sendForm(SettingsUtils.buildForm(session));
-                        break;
-                
-                    default:
-                        processEmote(session, packet);
-                        break;
-                }
-    
-                return;
-            });
-            
-            session.sendForm(emoteMenu);
+            // Build the Menu
+            session.sendForm(EmoteMenuUtils.buildForm(session, packet));            
 
             return;
         }
@@ -123,7 +65,7 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
      * @param session the session of the emoter
      * @param packet the packet with the emote data
      */
-    private void processEmote(GeyserSession session, EmotePacket packet) {
+    public static void processEmote(GeyserSession session, EmotePacket packet) {
         // For the future: could have a method that exposes which players will see the emote
         ClientEmoteEvent event = new ClientEmoteEvent(session, packet.getEmoteId());
         session.getGeyser().eventBus().fire(event);
