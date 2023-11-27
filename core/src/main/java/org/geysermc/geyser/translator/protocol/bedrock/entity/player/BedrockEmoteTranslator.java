@@ -27,6 +27,8 @@ package org.geysermc.geyser.translator.protocol.bedrock.entity.player;
 
 import org.cloudburstmc.protocol.bedrock.packet.EmotePacket;
 import org.geysermc.cumulus.form.CustomForm;
+import org.geysermc.cumulus.form.SimpleForm;
+import org.geysermc.cumulus.util.FormImage;
 import org.geysermc.geyser.api.event.bedrock.ClientEmoteEvent;
 import org.geysermc.geyser.configuration.EmoteOffhandWorkaroundOption;
 import org.geysermc.geyser.entity.type.Entity;
@@ -42,24 +44,50 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
     public void translate(GeyserSession session, EmotePacket packet) {
         if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() == EmoteOffhandWorkaroundOption.MENU) {
             
-            CustomForm.Builder emoteMenu = CustomForm.builder()
+            SimpleForm.Builder emoteMenu = SimpleForm.builder()
                 .title("Emote Menu")
-                .dropdown("Option", "Swap Offhand", "Execute Command", "Send Emote")
-                .input("Command", "Enter a command");
+                .button("Send Emote", FormImage.Type.PATH, "textures/ui/sprint.png")
+                .button("Swap Offhand", FormImage.Type.PATH, "textures/ui/refresh.png")
+                .button("Toggle Advanced Tooltips", FormImage.Type.PATH, "textures/ui/icon_recipe_equipment.png")
+                .button("Advancements", FormImage.Type.PATH, "textures/ui/village_hero_effect.png")
+                .button("Statistics", FormImage.Type.PATH, "textures/ui/icon_iron_pickaxe.png")
+                .button("Execute Command", FormImage.Type.PATH, "textures/ui/ImpulseSquare.png")
+                .button("Geyser Settings", FormImage.Type.PATH, "textures/ui/settings_glyph_color_2x.png");
 
             emoteMenu.closedResultHandler(() -> {
                 return;
             }).validResultHandler((response) -> {
-                // Swap Offhand
-                if (response.asDropdown(0) == 0) {
-                    session.requestOffhandSwap();
-                // Execute Command
-                } else if (response.asDropdown(0) == 1) {
-                    session.sendCommand(response.asInput(1));
-                // Send Emote
-                } else {
-                    processEmote(session, packet);
+                switch (response.clickedButtonId()) {
+                    case 1:
+                        session.requestOffhandSwap();
+                        break;
+
+                    case 2:
+                        session.sendCommand("geyser tooltips");
+                        break;
+
+                    case 3:
+                        session.sendCommand("geyser advancements");
+                        break;
+
+                    case 4:
+                        session.sendCommand("geyser statistics");
+                        break;
+
+                    case 5:
+                        session.sendCommand("give @p diamond");
+                        break;
+
+                    case 6:
+                        session.sendCommand("geyser settings");
+                        break;
+                
+                    default:
+                        processEmote(session, packet);
+                        break;
                 }
+    
+                return;
             });
             
             session.sendForm(emoteMenu);
