@@ -42,7 +42,7 @@ public class BedrockEmoteTranslator extends PacketTranslator<EmotePacket> {
     public void translate(GeyserSession session, EmotePacket packet) {
         if (session.getGeyser().getConfig().getEmoteOffhandWorkaround() == EmoteOffhandWorkaroundOption.MENU) {
             // Build the Menu
-            session.sendForm(EmoteMenuUtils.buildForm(session, packet));            
+            session.sendForm(EmoteMenuUtils.buildEmoteForm(session, packet));            
 
             return;
         }

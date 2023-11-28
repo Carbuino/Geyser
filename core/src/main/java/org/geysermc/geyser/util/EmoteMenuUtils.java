@@ -27,7 +27,9 @@ package org.geysermc.geyser.util;
 
 import org.cloudburstmc.protocol.bedrock.packet.EmotePacket;
 import org.geysermc.cumulus.form.SimpleForm;
+import org.geysermc.cumulus.form.CustomForm;
 import org.geysermc.cumulus.util.FormImage;
+import org.geysermc.geyser.api.util.PlatformType;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.text.MinecraftLocale;
 import org.geysermc.geyser.translator.protocol.bedrock.entity.player.BedrockEmoteTranslator;
@@ -36,54 +38,91 @@ import com.github.steveice10.mc.protocol.data.game.ClientCommand;
 import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientCommandPacket;
 
 public class EmoteMenuUtils {
-    public static SimpleForm buildForm(GeyserSession session, EmotePacket packet) {
+    public static SimpleForm buildEmoteForm(GeyserSession session, EmotePacket packet) {
         SimpleForm.Builder builder = SimpleForm.builder()
             .title("Emote Menu")
             .button("Send Emote", FormImage.Type.PATH, "textures/ui/sprint.png")
             .button("Swap Offhand", FormImage.Type.PATH, "textures/ui/refresh.png")
             .button("Toggle Advanced Tooltips", FormImage.Type.PATH, "textures/ui/icon_recipe_equipment.png")
             .button("Advancements", FormImage.Type.PATH, "textures/ui/village_hero_effect.png")
-            .button("Statistics", FormImage.Type.PATH, "textures/ui/icon_iron_pickaxe.png")
-            .button("Execute Command", FormImage.Type.PATH, "textures/ui/ImpulseSquare.png")
+            .button("Statistics", FormImage.Type.PATH, "textures/items/iron_pickaxe.png")
+            .button("Execute Command", FormImage.Type.PATH, "textures/blocks/command_block.png")
             .button("Geyser Settings", FormImage.Type.PATH, "textures/ui/settings_glyph_color_2x.png");
 
         builder.closedResultHandler(() -> {
             return;
         }).validResultHandler((response) -> {
             switch (response.clickedButtonId()) {
+                // Swap offhand
                 case 1:
-                    session.requestOffhandSwap();
+                    if (checkSessionPermission(session, "geyser.command.offhand") == true) {
+                        session.requestOffhandSwap();
+                    }
                     break;
-
+                // Toggle Advanced Tooltips
                 case 2:
-                    String onOrOff = session.isAdvancedTooltips() ? "off" : "on";
-                    session.setAdvancedTooltips(!session.isAdvancedTooltips());
-                    session.sendMessage("§l§e" + MinecraftLocale.getLocaleString("debug.prefix", session.locale()) + " §r" + MinecraftLocale.getLocaleString("debug.advanced_tooltips." + onOrOff, session.locale()));
-                    session.getInventoryTranslator().updateInventory(session, session.getPlayerInventory());
+                    if (checkSessionPermission(session, "geyser.command.tooltips") == true) {
+                        String onOrOff = session.isAdvancedTooltips() ? "off" : "on";
+                        session.setAdvancedTooltips(!session.isAdvancedTooltips());
+                        session.sendMessage("§l§e" + MinecraftLocale.getLocaleString("debug.prefix", session.locale()) + " §r" + MinecraftLocale.getLocaleString("debug.advanced_tooltips." + onOrOff, session.locale()));
+                        session.getInventoryTranslator().updateInventory(session, session.getPlayerInventory());
+                    }
                     break;
-
+                // View Advancements
                 case 3:
-                    session.getAdvancementsCache().buildAndShowMenuForm();
+                    if (checkSessionPermission(session, "geyser.command.advancements") == true) {
+                        session.getAdvancementsCache().buildAndShowMenuForm();
+                    }
                     break;
-
+                // View Statistics
                 case 4:
-                    session.setWaitingForStatistics(true);
-                    ServerboundClientCommandPacket ServerboundClientCommandPacket = new ServerboundClientCommandPacket(ClientCommand.STATS);
-                    session.sendDownstreamGamePacket(ServerboundClientCommandPacket);
+                    if (checkSessionPermission(session, "geyser.command.statistics") == true) {
+                        session.setWaitingForStatistics(true);
+                        ServerboundClientCommandPacket ServerboundClientCommandPacket = new ServerboundClientCommandPacket(ClientCommand.STATS);
+                        session.sendDownstreamGamePacket(ServerboundClientCommandPacket);
+                    }
                     break;
-
+                // Execute Command
                 case 5:
-                    session.sendForm(CommandMenuUtils.buildForm(session, packet));
+                    session.sendForm(EmoteMenuUtils.buildCommandForm(session, packet));
                     break;
-
+                // View Geyser Settings
                 case 6:
-                    session.sendForm(SettingsUtils.buildForm(session));
+                    if (checkSessionPermission(session, "geyser.command.settings") == true) {
+                        session.sendForm(SettingsUtils.buildForm(session));
+                    }
                     break;
-            
+                // Send Emote
                 default:
                     BedrockEmoteTranslator.processEmote(session, packet);
                     break;
             }
+        });
+
+        return builder.build();
+    }
+
+    private static boolean checkSessionPermission(GeyserSession session, String permission) {
+        if (session.getGeyser().getPlatformType() == PlatformType.STANDALONE || session.hasPermission(permission)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Build a settings form for the given session and store it for later
+     *
+     * @param session The session to build the form for
+     */
+    public static CustomForm buildCommandForm(GeyserSession session, EmotePacket packet) {
+        CustomForm.Builder builder = CustomForm.builder()
+            .title("Emote Menu - Execute Command")
+            .input("Command", "Enter a command");
+
+        builder.closedResultHandler(() -> {
+            session.sendForm(EmoteMenuUtils.buildEmoteForm(session, packet));
+        }).validResultHandler((response) -> {
+            session.sendCommand(response.asInput(0));
         });
 
         return builder.build();
