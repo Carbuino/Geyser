@@ -348,6 +348,13 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                                     openPacket.setType(ContainerType.JIGSAW_EDITOR);
                                     openPacket.setUniqueEntityId(-1);
                                     session.sendUpstreamPacket(openPacket);
+                                } else if (session.getBlockMappings().getStructureBlockStates().containsValue(packet.getBlockDefinition())) {
+                                    ContainerOpenPacket openPacket = new ContainerOpenPacket();
+                                    openPacket.setBlockPosition(packet.getBlockPosition());
+                                    openPacket.setId((byte) 1);
+                                    openPacket.setType(ContainerType.STRUCTURE_EDITOR);
+                                    openPacket.setUniqueEntityId(-1);
+                                    session.sendUpstreamPacket(openPacket);
                                 }
                             }
                         }
@@ -380,6 +387,8 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                             } else if (packet.getItemInHand().getDefinition() == session.getItemMappings().getStoredItems().glassBottle().getBedrockDefinition()) {
                                 // Handled in case 0
                                 break;
+                            } else if (packet.getItemInHand().getDefinition() == session.getItemMappings().getStoredItems().writtenBook().getBedrockDefinition()) {
+                                session.setCurrentBook(packet.getItemInHand());
                             }
                         }
 
@@ -387,7 +396,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         session.sendDownstreamGamePacket(useItemPacket);
 
                         List<LegacySetItemSlotData> legacySlots = packet.getLegacySlots();
-                        if (packet.getActions().size() == 1 && legacySlots.size() > 0) {
+                        if (packet.getActions().size() == 1 && !legacySlots.isEmpty()) {
                             InventoryActionData actionData = packet.getActions().get(0);
                             LegacySetItemSlotData slotData = legacySlots.get(0);
                             if (slotData.getContainerId() == 6 && !actionData.getFromItem().isNull()) {
@@ -635,16 +644,16 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
 
     /**
      * Determine the rotation necessary to activate this transaction.
-     *
+     * <p>
      * The position between the intended click position and the player can be determined with two triangles.
      * First, we compute the difference of the X and Z coordinates:
-     *
+     * <p>
      * Player position (0, 0)
      * |
      * |
      * |
      * |_____________ Intended target (-3, 2)
-     *
+     * <p>
      * We then use the Pythagorean Theorem to find the direct line (hypotenuse) on the XZ plane. Finding the angle of the
      * triangle from there, closest to the player, gives us our yaw rotation value
      * Then doing the same using the new XZ distance and Y difference, we can find the direct line of sight from the

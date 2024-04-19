@@ -52,6 +52,7 @@ public interface GeyserConfiguration {
 
     List<String> getSavedUserLogins();
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean isCommandSuggestions();
 
     @JsonIgnore
@@ -93,6 +94,7 @@ public interface GeyserConfiguration {
 
     boolean isForceResourcePacks();
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean isXboxAchievementsEnabled();
 
     int getCacheImages();
@@ -119,6 +121,8 @@ public interface GeyserConfiguration {
         void setAddress(String address);
 
         void setPort(int port);
+
+        void setBroadcastPort(int broadcastPort);
 
         boolean isCloneRemotePort();
 

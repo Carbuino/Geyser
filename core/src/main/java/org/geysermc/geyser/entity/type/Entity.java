@@ -36,6 +36,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
@@ -199,11 +200,9 @@ public class Entity implements GeyserEntity {
 
     /**
      * Despawns the entity
-     *
-     * @return can be deleted
      */
-    public boolean despawnEntity() {
-        if (!valid) return true;
+    public void despawnEntity() {
+        if (!valid) return;
 
         for (Entity passenger : passengers) { // Make sure all passengers on the despawned entity are updated
             if (passenger == null) continue;
@@ -217,7 +216,6 @@ public class Entity implements GeyserEntity {
         session.sendUpstreamPacket(removeEntityPacket);
 
         valid = false;
-        return true;
     }
 
     public void moveRelative(double relX, double relY, double relZ, float yaw, float pitch, boolean isOnGround) {
@@ -580,7 +578,7 @@ public class Entity implements GeyserEntity {
     }
 
     @SuppressWarnings("unchecked")
-    public <I extends Entity> I as(Class<I> entityClass) {
+    public <I extends Entity> @Nullable I as(Class<I> entityClass) {
         return entityClass.isInstance(this) ? (I) this : null;
     }
 }

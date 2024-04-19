@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import lombok.Builder;
 import lombok.Value;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.protocol.bedrock.data.BlockPropertyData;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
@@ -54,11 +55,13 @@ public class BlockMappings implements DefinitionRegistry<GeyserBedrockBlock> {
     int[] remappedVanillaIds;
 
     BlockDefinition commandBlock;
+    BlockDefinition mobSpawnerBlock;
 
     Map<NbtMap, BlockDefinition> itemFrames;
     Map<String, NbtMap> flowerPotBlocks;
 
     Set<BlockDefinition> jigsawStates;
+    Map<String, BlockDefinition> structureBlockStates;
 
     List<BlockPropertyData> blockProperties;
     Object2ObjectMap<CustomBlockState, GeyserBedrockBlock> customBlockStateDefinitions;
@@ -94,15 +97,19 @@ public class BlockMappings implements DefinitionRegistry<GeyserBedrockBlock> {
         return false;
     }
 
+    public BlockDefinition getStructureBlockFromMode(String mode) {
+        return structureBlockStates.get(mode);
+    }
+
     @Override
-    public GeyserBedrockBlock getDefinition(int bedrockId) {
+    public @Nullable GeyserBedrockBlock getDefinition(int bedrockId) {
         if (bedrockId < 0 || bedrockId >= this.bedrockRuntimeMap.length) {
             return null;
         }
         return bedrockRuntimeMap[bedrockId];
     }
 
-    public GeyserBedrockBlock getDefinition(NbtMap tag) {
+    public @Nullable GeyserBedrockBlock getDefinition(NbtMap tag) {
         if (tag == null) {
             return null;
         }

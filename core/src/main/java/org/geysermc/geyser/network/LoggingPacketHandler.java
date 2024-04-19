@@ -101,6 +101,16 @@ public class LoggingPacketHandler implements BedrockPacketHandler {
     }
 
     @Override
+    public PacketSignal handle(CameraPresetsPacket packet) {
+        return defaultHandler(packet);
+    }
+
+    @Override
+    public PacketSignal handle(CameraInstructionPacket packet) {
+        return defaultHandler(packet);
+    }
+
+    @Override
     public PacketSignal handle(CommandBlockUpdatePacket packet) {
         return defaultHandler(packet);
     }
@@ -282,6 +292,11 @@ public class LoggingPacketHandler implements BedrockPacketHandler {
 
     @Override
     public PacketSignal handle(SetPlayerGameTypePacket packet) {
+        return defaultHandler(packet);
+    }
+
+    @Override
+    public PacketSignal handle(SubChunkRequestPacket packet) {
         return defaultHandler(packet);
     }
 
@@ -867,6 +882,18 @@ public class LoggingPacketHandler implements BedrockPacketHandler {
 
     @Override
     public PacketSignal handle(RequestNetworkSettingsPacket packet) {
+        return defaultHandler(packet);
+    }
+
+    // todo: fix arrangement
+
+    @Override
+    public PacketSignal handle(ToggleCrafterSlotRequestPacket packet) {
+        return defaultHandler(packet);
+    }
+
+    @Override
+    public PacketSignal handle(TrimDataPacket packet) {
         return defaultHandler(packet);
     }
 }

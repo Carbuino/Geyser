@@ -68,6 +68,7 @@ import static org.geysermc.geyser.util.InventoryUtils.LAST_RECIPE_NET_ID;
 
 /**
  * Used to send all valid recipes from Java to Bedrock.
+ * <p>
  * Bedrock REQUIRES a CraftingDataPacket to be sent in order to craft anything.
  */
 @Translator(packet = ClientboundUpdateRecipesPacket.class)
@@ -168,6 +169,13 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                 }
                 case STONECUTTING -> {
                     StoneCuttingRecipeData stoneCuttingData = (StoneCuttingRecipeData) recipe.getData();
+                    if (stoneCuttingData.getIngredient().getOptions().length == 0) {
+                        if (GeyserImpl.getInstance().getConfig().isDebugMode()) {
+                            GeyserImpl.getInstance().getLogger().debug("Received broken stone cutter recipe: " + stoneCuttingData + " " +
+                                    recipe.getIdentifier() + " " + Registries.JAVA_ITEMS.get().get(stoneCuttingData.getResult().getId()).javaIdentifier());
+                        }
+                        continue;
+                    }
                     ItemStack ingredient = stoneCuttingData.getIngredient().getOptions()[0];
                     List<StoneCuttingRecipeData> data = unsortedStonecutterData.get(ingredient.getId());
                     if (data == null) {
@@ -337,7 +345,7 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
                     GroupedItem groupedItem = entry.getKey();
 
                     String recipeTag = RECIPE_TAGS.get(groupedItem.id.getIdentifier());
-                    if (recipeTag != null) {
+                    if (recipeTag != null && ingredients.length > 1) {
                         optionSet.add(new ItemDescriptorWithCount(new ItemTagDescriptor(recipeTag), groupedItem.count));
                         continue;
                     }
