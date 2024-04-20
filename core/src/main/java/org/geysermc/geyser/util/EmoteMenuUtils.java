@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2024 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,14 +30,19 @@ import org.geysermc.cumulus.form.SimpleForm;
 import org.geysermc.cumulus.form.CustomForm;
 import org.geysermc.cumulus.util.FormImage;
 import org.geysermc.geyser.api.util.PlatformType;
+import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.session.GeyserSession;
-import org.geysermc.geyser.text.MinecraftLocale;
+import org.geysermc.geyser.text.ChatColor;
+import org.geysermc.geyser.text.GeyserLocale;
 import org.geysermc.geyser.translator.protocol.bedrock.entity.player.BedrockEmoteTranslator;
 
-import com.github.steveice10.mc.protocol.data.game.ClientCommand;
-import com.github.steveice10.mc.protocol.packet.ingame.serverbound.ServerboundClientCommandPacket;
-
 public class EmoteMenuUtils {
+    /**
+    * Build the emote menu form for the given session
+    *
+    * @param session The session to build the form for
+    * @param packet Emote Packet sent by the session
+    */
     public static SimpleForm buildEmoteForm(GeyserSession session, EmotePacket packet) {
         SimpleForm.Builder builder = SimpleForm.builder()
             .title("Emote Menu")
@@ -53,78 +58,91 @@ public class EmoteMenuUtils {
             return;
         }).validResultHandler((response) -> {
             switch (response.clickedButtonId()) {
-                // Swap offhand
                 case 1:
-                    if (checkSessionPermission(session, "geyser.command.offhand") == true) {
-                        session.requestOffhandSwap();
+                    // Swap offhand
+                    if (checkSessionPermissions(session, "geyser.command.offhand") == true) {
+                        GeyserImpl.getInstance().commandManager().runCommand(session, "geyser offhand");
                     }
                     break;
-                // Toggle Advanced Tooltips
+
                 case 2:
-                    if (checkSessionPermission(session, "geyser.command.tooltips") == true) {
-                        String onOrOff = session.isAdvancedTooltips() ? "off" : "on";
-                        session.setAdvancedTooltips(!session.isAdvancedTooltips());
-                        session.sendMessage("§l§e" + MinecraftLocale.getLocaleString("debug.prefix", session.locale()) + " §r" + MinecraftLocale.getLocaleString("debug.advanced_tooltips." + onOrOff, session.locale()));
-                        session.getInventoryTranslator().updateInventory(session, session.getPlayerInventory());
+                    // Toggle Advanced Tooltips
+                    if (checkSessionPermissions(session, "geyser.command.tooltips") == true) {
+                        GeyserImpl.getInstance().commandManager().runCommand(session, "geyser tooltips");
                     }
                     break;
-                // View Advancements
+
                 case 3:
-                    if (checkSessionPermission(session, "geyser.command.advancements") == true) {
-                        session.getAdvancementsCache().buildAndShowMenuForm();
+                    // View Advancements
+                    if (checkSessionPermissions(session, "geyser.command.advancements") == true) {
+                        GeyserImpl.getInstance().commandManager().runCommand(session, "geyser advancements");
                     }
                     break;
-                // View Statistics
+
                 case 4:
-                    if (checkSessionPermission(session, "geyser.command.statistics") == true) {
-                        session.setWaitingForStatistics(true);
-                        ServerboundClientCommandPacket ServerboundClientCommandPacket = new ServerboundClientCommandPacket(ClientCommand.STATS);
-                        session.sendDownstreamGamePacket(ServerboundClientCommandPacket);
+                    // View Statistics
+                    if (checkSessionPermissions(session, "geyser.command.statistics") == true) {
+                        GeyserImpl.getInstance().commandManager().runCommand(session, "geyser statistics");
                     }
                     break;
-                // Execute Command
+
                 case 5:
+                    // Execute Command Menu
                     session.sendForm(EmoteMenuUtils.buildCommandForm(session, packet));
                     break;
-                // View Geyser Settings
+
+                    
                 case 6:
-                    if (checkSessionPermission(session, "geyser.command.settings") == true) {
-                        session.sendForm(SettingsUtils.buildForm(session));
+                    // View Geyser Settings
+                    if (checkSessionPermissions(session, "geyser.command.settings") == true) {
+                        GeyserImpl.getInstance().commandManager().runCommand(session, "geyser settings");
                     }
                     break;
-                // Send Emote
+                    
                 default:
+                    // Send Emote
                     BedrockEmoteTranslator.processEmote(session, packet);
                     break;
-            }
+
+            };
         });
 
         return builder.build();
-    }
-
-    private static boolean checkSessionPermission(GeyserSession session, String permission) {
+    };
+    
+    /**
+    * Check if a session has permission to run a given command, or if Geyser is running standalone
+    *
+    * @param session The session to check permissions for
+    * @param permission Permissions key to check
+    */
+    private static boolean checkSessionPermissions(GeyserSession session, String permission) {
         if (session.getGeyser().getPlatformType() == PlatformType.STANDALONE || session.hasPermission(permission)) {
             return true;
-        }
+        };
+        session.sendMessage(ChatColor.RED + GeyserLocale.getPlayerLocaleString("geyser.bootstrap.command.permission_fail", session.locale()));
         return false;
-    }
+    };
 
     /**
-     * Build a settings form for the given session and store it for later
-     *
-     * @param session The session to build the form for
-     */
-    public static CustomForm buildCommandForm(GeyserSession session, EmotePacket packet) {
+    * Build the form for command menu option for the given session
+    *
+    * @param session The session to build the form for
+    * @param packet Emote Packet, not used here but stored incase the user returns to the base menu
+    */
+    private static CustomForm buildCommandForm(GeyserSession session, EmotePacket packet) {
         CustomForm.Builder builder = CustomForm.builder()
             .title("Emote Menu - Execute Command")
             .input("Command", "Enter a command");
 
         builder.closedResultHandler(() -> {
             session.sendForm(EmoteMenuUtils.buildEmoteForm(session, packet));
+            
         }).validResultHandler((response) -> {
             session.sendCommand(response.asInput(0));
+            
         });
 
         return builder.build();
-    }
-}
+    };
+};
